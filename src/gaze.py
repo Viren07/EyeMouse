@@ -25,4 +25,23 @@ class Vision:
         if not results.multi_face_landmarks:
             return
         
+        # Holds all 478 facial landmarks detected in this frame; passed into get_landmark_coordinates so it can extract specific coordinates from it
         face_landmarks = results.multi_face_landmarks[0]
+
+        # Get the coordinates for the right, left iris etc... using get_landmark_coordinates
+        right_iris = self.get_landmark_coordinates(face_landmarks, [468, 469, 470, 471, 472])
+        left_iris = self.get_landmark_coordinates(face_landmarks, [473, 474, 475, 476, 477])
+
+
+    # Returns a list of (x, y) coordinates for the specific landmark indices requested
+    def get_landmark_coordinates(self, face_landmarks, indices):
+        
+        coordinates  = []
+        for curr in indices:
+            point = face_landmarks.landmark[curr]
+            coordinates.append((point.x, point.y))
+        return coordinates
+    
+
+
+
