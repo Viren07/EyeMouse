@@ -18,9 +18,10 @@ class Vision:
         if not ret:
             return
         
+        frame = cv2.flip(frame, 1) # Flip the frame horizontally so left/right in the image matches the user's actual left/right, since raw camera frames are mirrored
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) #converting it into RGB color from BGR
 
-        results = self.face_mesh.process(rgb_frame)
+        results = self.face_mesh.process(rgb_frame) # this line runs the model
 
         if not results.multi_face_landmarks:
             return
@@ -31,6 +32,14 @@ class Vision:
         # Get the coordinates for the right, left iris etc... using get_landmark_coordinates
         right_iris = self.get_landmark_coordinates(face_landmarks, [468, 469, 470, 471, 472])
         left_iris = self.get_landmark_coordinates(face_landmarks, [473, 474, 475, 476, 477])
+        right_eye_corners = self.get_landmark_coordinates(face_landmarks, [33, 133])
+        left_eye_corners = self.get_landmark_coordinates(face_landmarks, [362, 263])
+
+        #getting the ratio for the eyes using iris_eye_ratio
+        right_ratio = self.iris_eye_ratio(right_eye_corners, right_iris)
+        left_ratio = self.iris_eye_ratio(left_eye_corners, left_iris)
+        avg_ratio = (right_ratio + left_ratio) / 2
+    
 
 
     # Returns a list of (x, y) coordinates for the specific landmark indices requested
@@ -42,6 +51,16 @@ class Vision:
             coordinates.append((point.x, point.y))
         return coordinates
     
+    # calculates the ratio for how far the iris is moving rletive to the eye size 
+    def iris_eye_ratio(self, corner, iris):
+        iris_x = iris[0][0]
+        corner1_x = corner[0][0]
+        corner2_x = corner[1][0]
+
+        ratio = (iris_x - corner1_x ) / (corner2_x - corner1_x) 
+
+        return ratio
+
 
 
 
