@@ -13,7 +13,7 @@ while True:
     if frame is None:
         continue
     
-    frame = cv2.resize(frame, (960, 540))
+    frame = cv2.resize(frame, (960, 540)) # This is for setting the resolution of the app that launches 
 
     cv2.imshow("EyeMouse", frame) # Displaying the page with the camera 
 
