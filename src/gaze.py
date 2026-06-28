@@ -11,6 +11,7 @@ class Vision:
     def __init__(self):
         self.videocapture = cv2.VideoCapture(0)
         self.iris_position = None
+        self.iris_position_vertical = None
         self.ear_value = None
         self.head_tilt = None
 
@@ -53,12 +54,20 @@ class Vision:
         left_iris = self.get_landmark_coordinates(face_landmarks, [473, 474, 475, 476, 477])
         right_eye_corners = self.get_landmark_coordinates(face_landmarks, [33, 133])
         left_eye_corners = self.get_landmark_coordinates(face_landmarks, [362, 263])
+        right_eye_lids = self.get_landmark_coordinates(face_landmarks, [159, 145])
+        left_eye_lids = self.get_landmark_coordinates(face_landmarks, [386, 374])
 
-        #getting the ratio for the eyes using iris_eye_ratio
+        #getting the ratio for the eyes using iris_eye_ratio on the x axis
         right_ratio = self.iris_eye_ratio(right_eye_corners, right_iris)
         left_ratio = self.iris_eye_ratio(left_eye_corners, left_iris)
         avg_ratio = (right_ratio + left_ratio) / 2
         self.iris_position = avg_ratio
+
+        # Getting the ratio for the eye on the y axis 
+        right_ratio_lids = self.iris_lid_ratio(right_eye_lids, right_iris)
+        left_ratio_lids = self.iris_lid_ratio(left_eye_lids, left_iris)
+        avg_ratio_lids = (right_ratio_lids + left_ratio_lids) / 2
+        self.iris_position_vertical = avg_ratio_lids
 
         return frame
 
@@ -73,7 +82,7 @@ class Vision:
         return coordinates
     
 
-    # calculates the ratio for how far the iris is moving rletive to the eye size 
+    # calculates the ratio for how far the iris is moving rletive to the eye size (x axis)
     def iris_eye_ratio(self, corner, iris):
         iris_x = iris[0][0]
         corner1_x = corner[0][0]
@@ -82,7 +91,17 @@ class Vision:
         ratio = (iris_x - corner1_x ) / (corner2_x - corner1_x) 
 
         return ratio
+    
+    
 
+    # calculates the ratio for how far the iris is moving rletive to the lids (y axis)
+    def iris_lid_ratio(self, lids, iris):
+        iris_y = iris[0][1]
+        lids1_y = lids[0][1]
+        lids2_y = lids[1][1]
 
+        ratio = (iris_y - lids1_y ) / (lids2_y - lids1_y) 
+
+        return ratio
 
 
