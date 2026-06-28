@@ -13,6 +13,8 @@ while True:
     if frame is None:
         continue
     
+    frame = cv2.resize(frame, (960, 540))
+
     cv2.imshow("EyeMouse", frame) # Displaying the page with the camera 
 
     #when q is pressed we end the loop and the program stops 

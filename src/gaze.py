@@ -1,5 +1,8 @@
 import mediapipe as mp
 import cv2
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+import time
 
 class Vision:
     """This class is responsible for capturing frames from the camera live feed."""
@@ -7,10 +10,21 @@ class Vision:
     # Responsible for initialization and setting up the camera for capture
     def __init__(self):
         self.videocapture = cv2.VideoCapture(0)
-        self.face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
         self.iris_position = None
         self.ear_value = None
         self.head_tilt = None
+
+        model_path = "model/face_landmarker.task"
+        BaseOptions = mp.tasks.BaseOptions
+        FaceLandmarker = mp.tasks.vision.FaceLandmarker
+        FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
+        VisionRunningMode = mp.tasks.vision.RunningMode
+
+        options = FaceLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=model_path),
+            running_mode=VisionRunningMode.VIDEO)
+        
+        self.landmarker = FaceLandmarker.create_from_options(options)
 
     # Responsible for capturing the frame correctly from the video live feed
     def frame_capture(self):
@@ -21,13 +35,18 @@ class Vision:
         frame = cv2.flip(frame, 1) # Flip the frame horizontally so left/right in the image matches the user's actual left/right, since raw camera frames are mirrored
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) #converting it into RGB color from BGR
 
-        results = self.face_mesh.process(rgb_frame) # this line runs the model
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame) # Wraps the RGB frame into MediaPipe's required Image format for the new Tasks API
 
-        if not results.multi_face_landmarks:
+        timestamp_ms = int(time.time() * 1000) # Get the current time in milliseconds
+
+        face_landmarker_result = self.landmarker.detect_for_video(mp_image, timestamp_ms) # Runs face detection on this frame using the model, passing in the image and its timestamp
+
+        # # Skip this frame if no face was detected, to avoid errors trying to process empty data
+        if not face_landmarker_result.face_landmarks:
             return
-        
-        # Holds all 478 facial landmarks detected in this frame; passed into get_landmark_coordinates so it can extract specific coordinates from it
-        face_landmarks = results.multi_face_landmarks[0]
+
+        face_landmarks = face_landmarker_result.face_landmarks[0] # # Grabs the first (and only) detected face's landmarks from this frame, for use in the calculations below
+
 
         # Get the coordinates for the right, left iris etc... using get_landmark_coordinates
         right_iris = self.get_landmark_coordinates(face_landmarks, [468, 469, 470, 471, 472])
@@ -49,7 +68,7 @@ class Vision:
         
         coordinates  = []
         for curr in indices:
-            point = face_landmarks.landmark[curr]
+            point = face_landmarks[curr]
             coordinates.append((point.x, point.y))
         return coordinates
     
